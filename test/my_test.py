@@ -1,67 +1,82 @@
-import json
+"""
+My Homework #2.
+"""
+from faker import Faker
 import unittest
-import requests
 
 from lib.authentication import Authenticate
 
 
-class YahooAPITestCase(unittest.TestCase):
-    def test_for_successful_response (self):
-        result = requests.get("http://www.yahoo.com")
-        self.assertEqual(200, result.status_code)
-        # OR
-        self.assertTrue('OK' == result.reason)
+fake = Faker()
 
 
 class CareerPortalTests(unittest.TestCase):
-    def setUp (self) -> None:
-        pass
+    def setUp(self) -> None:
+        self.sess = Authenticate()
 
-    # we don't need setUp because everything in Authentic class
+    def get_candidates(self):
+        response = self.sess.get_all_candidates()  # `get_all_candidates` returns requests.Response object
+        self.assertTrue(response.ok)
+        return response.json()  # here we finally get list of candidates
 
-    def test_login (self):
-        sess = Authenticate()
-        positions = sess.get_all_positions()
-        json_positions = json.loads(positions.text)
-        self.assertEqual(5, len(json_positions))
+    def test_login(self):
+        candidates_count = len(self.get_candidates())  # Count how many candidates returned
 
-        # post new candidate
-        new_candidate = sess.post_new_candidate('Nj', 'Candkjidate', 'nd@example.com', 'delete')
-        json_new_candidate = json.loads(new_candidate.text)
-        self.assertEqual('Candkjidate', json_new_candidate['lastName'])
+        # Create new candidate
+        new_candidate_data = {
+            'firstName': fake.first_name(),
+            'lastName': fake.last_name(),
+            'email': fake.email(),
+            'password': 'delete'
+        }
+        response = self.sess.post_new_candidate(new_candidate_data)
+        self.assertTrue(response.ok)
+        new_candidate = response.json()
+        self.assertEqual(new_candidate['lastName'], new_candidate_data['lastName'])
 
-        new_candidate_id = json_new_candidate['id']
-        print(new_candidate_id)
+        new_candidate_id = new_candidate['id']
 
-        # delete candidate using ID
-        delete_candidate = sess.delete_candidate_by_id(new_candidate_id)
-        self.assertEqual()
-        # i don't know how to finish it((
+        # login created candidate
+        response = self.sess.authenticate(new_candidate_data['email'], new_candidate_data['password'])
+        self.assertTrue(response.ok)
 
-        candidates = sess.get_all_candidates()
-        json_candidates = json.loads(candidates.text)
-        self.assertEqual(60, len(json_candidates))
+        # Retrieve the list of all candidates and check that one of the entries is the candidate you posted
+        candidates = self.get_candidates()
+        # Example of classic loop
+        # candidate_ids = []
+        # for candidate in candidates:
+        #     candidate_ids.append(candidate['id'])
+        # self.assertIn(new_candidate_id, candidate_ids)
+        candidate_ids = [candidate['id'] for candidate in candidates]
+        self.assertIn(new_candidate_id, candidate_ids)
 
-        result = sess.authenticate("student@example.com", "welcome")
-        self.assertEqual(200, result.status_code)
+        # GET the list of existing candidates AGAIN...
+        candidates = self.get_candidates()
+        # Ensure the count is now greater than before
+        self.assertEqual(len(candidates), candidates_count + 1)
 
-        verify_response = sess.perform_user_verification()
-        verify_content = json.loads(verify_response.content)
+        # Login as student@example.com and
+        # DELETE the candidate you created using the ID you stored
+        self.sess.authenticate("student@example.com", "welcome")
+        response = self.sess.delete_candidate_by_id(new_candidate_id)
+        self.assertTrue(response.ok)  # keep in mind that we should get 204 status here
+        # Optionally we can check exact status with
+        # self.assertEqual(response.status_code, 204)
 
-        user_id = verify_content['id']
-        email = verify_content['email']
+        # Ensure the candidate was deleted!
+        # 1) request candidates list again and ensure users count equals candidates_count - 1
+        # 2) request candidate by id, ensure that API replies with 404 status
+        response = self.sess.get_candidate_by_id(new_candidate_id)
+        self.assertEqual(response.status_code, 400)
 
-        self.assertTrue(email == 'student@example.com')
-        self.assertEqual(8, user_id)
-
-        my_positions = sess.get_candidate_positions(user_id)
-        json_my_positions = json.loads(my_positions.text)
-        self.assertEqual(1, len(json_my_positions))
+        # Retrieve the list of all candidates and check that the deleted candidate is no longer included in the list
+        candidates = self.get_candidates()
+        candidate_ids = [candidate['id'] for candidate in candidates]
+        self.assertNotIn(new_candidate_id, candidate_ids)
 
     def test_cannot_login(self):
-        sess = Authenticate()
-        response = sess.authenticate('foo', 'barr')
-        json_parsed = json.loads(response.text)
+        response = self.sess.authenticate('foo', 'barr')
+        json_parsed = response.json()
         self.assertEqual('Incorrect email: foo', json_parsed['errorMessage'])
 
 
