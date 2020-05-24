@@ -38,60 +38,71 @@ class CareerPortalTests(unittest.TestCase):
         # login created candidate
         response = self.sess.authenticate(new_candidate_data['email'], new_candidate_data['password'])
         self.assertTrue(response.ok)
-        #
-        # # Retrieve the list of all candidates and check that one of the entries is the candidate you posted
-        # candidates = self.get_candidates()
-        # # Example of classic loop
-        # # candidate_ids = []
-        # # for candidate in candidates:
-        # #     candidate_ids.append(candidate['id'])
-        # # self.assertIn(new_candidate_id, candidate_ids)
-        # candidate_ids = [candidate['id'] for candidate in candidates]
-        # self.assertIn(new_candidate_id, candidate_ids)
-        #
-        # # GET the list of existing candidates AGAIN...
-        # candidates = self.get_candidates()
-        # # Ensure the count is now greater than before
-        # self.assertEqual(len(candidates), candidates_count + 1)
-        #
-        # # Login as student@example.com and
-        # # DELETE the candidate you created using the ID you stored
-        # self.sess.authenticate("student@example.com", "welcome")
-        # response = self.sess.delete_candidate_by_id(new_candidate_id)
-        # self.assertTrue(response.ok)  # keep in mind that we should get 204 status here
-        # # Optionally we can check exact status with
-        # # self.assertEqual(response.status_code, 204)
-        #
-        # # Ensure the candidate was deleted!
-        # # 1) request candidates list again and ensure users count equals candidates_count - 1
-        # # 2) request candidate by id, ensure that API replies with 404 status
-        # response = self.sess.get_candidate_by_id(new_candidate_id)
-        # self.assertEqual(response.status_code, 400)
-        #
-        # # Retrieve the list of all candidates and check that the deleted candidate is no longer included in the list
-        # candidates = self.get_candidates()
-        # candidate_ids = [candidate['id'] for candidate in candidates]
-        # self.assertNotIn(new_candidate_id, candidate_ids)
-        #
-        # # создаем кандидату 2 позиции
-        # response = self.sess.assign_positions_for_candidate(new_candidate_id, '9')
-        # self.assertTrue(response.ok)
-        # position_for_new_candidate = response.json()
-        # self.assertEqual(position_for_new_candidate['id'], 9)
 
-        # убедиться, что у кандидата 2 позиции
+        # Retrieve the list of all candidates and check that one of the entries is the candidate you posted
+        candidates = self.get_candidates()
+        # Example of classic loop
+        # candidate_ids = []
+        # for candidate in candidates:
+        #     candidate_ids.append(candidate['id'])
+        # self.assertIn(new_candidate_id, candidate_ids)
+        candidate_ids = [candidate['id'] for candidate in candidates]
+        self.assertIn(new_candidate_id, candidate_ids)
+
+        # GET the list of existing candidates AGAIN...
+        candidates = self.get_candidates()
+        # Ensure the count is now greater than before
+        self.assertEqual(len(candidates), candidates_count + 1)
+
+        # Login as student@example.com and
+        # DELETE the candidate you created using the ID you stored
+        self.sess.authenticate("student@example.com", "welcome")
+        response = self.sess.delete_candidate_by_id(new_candidate_id)
+        self.assertTrue(response.ok)  # keep in mind that we should get 204 status here
+        # Optionally we can check exact status with
+        # self.assertEqual(response.status_code, 204)
+
+        # Ensure the candidate was deleted!
+        # 1) request candidates list again and ensure users count equals candidates_count - 1
+        # 2) request candidate by id, ensure that API replies with 404 status
+        response = self.sess.get_candidate_by_id(new_candidate_id)
+        self.assertEqual(response.status_code, 400)
+
+        # Retrieve the list of all candidates and check that the deleted candidate is no longer included in the list
+        candidates = self.get_candidates()
+        candidate_ids = [candidate['id'] for candidate in candidates]
+        self.assertNotIn(new_candidate_id, candidate_ids)
+
+        # создаем кандидату 2 позиции
+        response = self.sess.assign_positions_for_candidate(new_candidate_id, '9')
+        self.assertTrue(response.ok)
+        position_for_new_candidate = response.json()
+        self.assertEqual(position_for_new_candidate['id'], 9)
+
+        response = self.sess.assign_positions_for_candidate(new_candidate_id, '4')
+        self.assertTrue(response.ok)
+        position_for_new_candidate = response.json()
+        self.assertEqual(position_for_new_candidate['id'], 4)
+
+        # убедиться, что у кандидата новая  позиция
         response = self.sess.get_candidate_positions(new_candidate_id)
         self.assertTrue(response.ok)
 
+    #     во второй позиции изменить информацию (PUT)  и убедться что инф изменена
+        positions_data = {
+            "company": "ABC"
+        }
+
+        response = self.sess.update_positions_data('9', positions_data)
+        self.assertTrue(response.ok)
+        updated_data = response.json()
+        self.assertEqual(positions_data['company'], updated_data['ABC'])
 
 
-
-
-    #
-    # def test_cannot_login(self):
-    #     response = self.sess.authenticate('foo', 'barr')
-    #     json_parsed = response.json()
-    #     self.assertEqual('Incorrect email: foo', json_parsed['errorMessage'])
+    def test_cannot_login(self):
+        response = self.sess.authenticate('foo', 'barr')
+        json_parsed = response.json()
+        self.assertEqual('Incorrect email: foo', json_parsed['errorMessage'])
 
 
 if __name__ == '__main__':

@@ -41,16 +41,22 @@ class Authenticate(object):
     def perform_user_verification (self):
         return self.session.post(self.base_url + '/verify')
 
-    def get_candidate_positions (self, user_id):
+    # убедиться, что у кандидата 2 позиции
+    def get_candidate_positions(self, user_id):
         return self.session.get(self.base_url + '/candidates/' + str(user_id) + '/positions')
 
+    # создаем кандидату 2 позиции
     def assign_positions_for_candidate(self, user_id, position_id):
         return self.session.post(self.base_url + '/candidates/' + str(user_id) + '/positions' + str(position_id))
+    # ?
+    def get_candidate_by_id(self, new_candidate_id):
+        pass
+
+    # во второй позиции изменить информацию (PUT)
+    def update_positions_data(self, positions_id, company_name):
+        json_data = {"company": company_name}
+        return self.session.put(self.base_url + '/positions/' + str(positions_id), json=json_data)
 
 
-# https://recruit-portnov.herokuapp.com/recruit/api/v1/candidates/2/positions   -position POST posit-9 usID-2
 
-# goal: token will be part of the session all the time we don't need to pass token to the func
-# all functions need to be in 1 container, that session can be shared,all function can use it.
-# We create new instance of this container it create new instance of the session and all
-# funct-s can use it)
+
