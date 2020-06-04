@@ -1,6 +1,7 @@
 import json
 
 import requests
+from faker import Faker
 
 
 class Authenticate(object):
@@ -25,20 +26,32 @@ class Authenticate(object):
             self.session.headers.update({'Authorization': 'Bearer ' + token})
         return resp
 
-    def post_new_candidate (self, first_name, last_name, email, password):
-        json_data = {"firstName": first_name, "lastName": last_name, "email": email, "password": password}
-        return self.session.post(self.base_url + '/candidates', json=json_data)
+    def post_new_candidate(self, data=None):
+        f = Faker()
 
-    def delete_candidate_by_id (self, new_candidate_id):
+        first_name = f.first_name()
+        last_name = f.last_name()
+        email = f.email()
+
+        new_candidate_data = {
+            'firstName': first_name,
+            'lastName': last_name,
+            'email': email,
+            'password': 'delete'
+        }
+
+        return self.session.post(self.base_url + '/candidates', json=data or new_candidate_data)
+
+    def delete_candidate_by_id(self, new_candidate_id):
         return self.session.delete(self.base_url + '/candidates/' + str(new_candidate_id))
 
-    def get_all_candidates (self):
+    def get_all_candidates(self):
         return requests.get(self.base_url + '/candidates')
 
-    def get_all_positions (self):
+    def get_all_positions(self):
         return requests.get(self.base_url + '/positions')
 
-    def perform_user_verification (self):
+    def perform_user_verification(self):
         return self.session.post(self.base_url + '/verify')
 
     # убедиться, что у кандидата 2 позиции
@@ -47,16 +60,30 @@ class Authenticate(object):
 
     # создаем кандидату 2 позиции
     def assign_positions_for_candidate(self, user_id, position_id):
-        return self.session.post(self.base_url + '/candidates/' + str(user_id) + '/positions' + str(position_id))
-    # ?
-    def get_candidate_by_id(self, new_candidate_id):
-        pass
+        data = {
+            "positionId": position_id
+        }
+        return self.session.post(self.base_url + '/candidates/' + str(user_id) + '/positions', json=data)
+
 
     # во второй позиции изменить информацию (PUT)
     def update_positions_data(self, positions_id, company_name):
         json_data = {"company": company_name}
         return self.session.put(self.base_url + '/positions/' + str(positions_id), json=json_data)
 
+    # create new position
+    def create_new_position(self, title):
+        position_data = {
+            'title': title,
+        }
+        return self.session.post(self.base_url + '/positions/',  json=position_data)
+
+#     delete position
+    def delete_position(self, position_id):
+        json_data = {"positionID": position_id}
+        return self.session.put(self.base_url + '/positions/' + str(position_id), json=json_data)
+
+  
 
 
 

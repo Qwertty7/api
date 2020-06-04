@@ -3,7 +3,7 @@ My Homework #2.
 """
 from faker import Faker
 import unittest
-from lib.authentication import Authenticate
+from lib.recruit_career.authentication import Authenticate
 
 
 fake = Faker()
@@ -65,38 +65,14 @@ class CareerPortalTests(unittest.TestCase):
         # Ensure the candidate was deleted!
         # 1) request candidates list again and ensure users count equals candidates_count - 1
         # 2) request candidate by id, ensure that API replies with 404 status
-        response = self.sess.get_candidate_by_id(new_candidate_id)
-        self.assertEqual(response.status_code, 400)
+        # response = self.sess.get_candidate_by_id(new_candidate_id)
+        # self.assertEqual(response.status_code, 400)
 
         # Retrieve the list of all candidates and check that the deleted candidate is no longer included in the list
         candidates = self.get_candidates()
         candidate_ids = [candidate['id'] for candidate in candidates]
         self.assertNotIn(new_candidate_id, candidate_ids)
 
-        # создаем кандидату 2 позиции
-        response = self.sess.assign_positions_for_candidate(new_candidate_id, '9')
-        self.assertTrue(response.ok)
-        position_for_new_candidate = response.json()
-        self.assertEqual(position_for_new_candidate['id'], 9)
-
-        response = self.sess.assign_positions_for_candidate(new_candidate_id, '4')
-        self.assertTrue(response.ok)
-        position_for_new_candidate = response.json()
-        self.assertEqual(position_for_new_candidate['id'], 4)
-
-        # убедиться, что у кандидата новая  позиция
-        response = self.sess.get_candidate_positions(new_candidate_id)
-        self.assertTrue(response.ok)
-
-    #     во второй позиции изменить информацию (PUT)  и убедться что инф изменена
-        positions_data = {
-            "company": "ABC"
-        }
-
-        response = self.sess.update_positions_data('9', positions_data)
-        self.assertTrue(response.ok)
-        updated_data = response.json()
-        self.assertEqual(positions_data['company'], updated_data['ABC'])
 
 
     def test_cannot_login(self):
